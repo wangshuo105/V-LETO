@@ -1,0 +1,8 @@
+# General
+save_model/*
+logs/*
+save/*
+data/*
+save_model_class/*
+logs_logger/*
+run_class_enhance.sh
