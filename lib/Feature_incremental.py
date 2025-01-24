@@ -1,4 +1,4 @@
-# This is a sample Python script.
+
 import pandas as pd
 import torch
 from lib.data_example import *
@@ -367,7 +367,6 @@ def Feature_train(args,logger):
                                 labels[i] = 1
 
                         
-                        
                 
                     
                     out_result = server_model(all_inter)      
@@ -400,7 +399,6 @@ def Feature_train(args,logger):
                             agg_protos_label[train_label[i].item()] = [all_inter[i,:]]
                             
                 epoch_prototype, error = agg_func_error(agg_protos_label)   
-                # print("error",error)
                 agg_protos_label = {}
                 
                 init_acc = sum(batch_acc)/(len(batch_acc))
@@ -425,7 +423,7 @@ def Feature_train(args,logger):
 
                 test_task_acc, test_task_loss = test_model(server_model, num_clients, models, test_dataset, args, t, logger, task_client,data,client_global_prototype,client_global_prototype_error,current_prototype)
 
-                # for tt in range(len(test_task_acc)):
+
                 df_test = pd.DataFrame({
                     'Training Task':[t],
                     'Epoch': [epoch+1], 
@@ -565,20 +563,18 @@ def test_model(server_model, num_clients, models, test_dataset, args, t, logger,
      
 
 if __name__ == '__main__':
-    random.seed(123)
-    np.random.seed(123)
-    torch.manual_seed(123)
-    torch.cuda.manual_seed_all(123)
-    torch.cuda.manual_seed(123)
+    random.seed(3407)
+    np.random.seed(3407)
+    torch.manual_seed(3407)
+    torch.cuda.manual_seed_all(3407)
+    torch.cuda.manual_seed(3407)
     
-    # args = args_parser()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     args = args_parser()
     logger = setup_logger(args)
     logger.info(device)
-    logger.info("命令行参数:")
     for arg, value in vars(args).items():
         logger.info(f"{arg}: {value}")
     
-    train(args,logger)
+    Feature_train(args,logger)
     

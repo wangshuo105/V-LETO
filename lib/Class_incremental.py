@@ -67,21 +67,16 @@ def save_model(model, t, party):
     # 确保保存目录存在
     save_dir = f"save_model_class/{t}/{args.datasets}"
     os.makedirs(save_dir, exist_ok=True)
-    # 自定义保存文件名，包含 epoch 和其他信息
     filename = os.path.join(save_dir, f"{party}_model_{args.model}_{args.datasets}_{args.lambda_proto_aug}_{args.k_0}_{args.alpha}_{args.lr}_task_{t}.pth")
     
-    # 保存模型的 state_dict
+
     torch.save(model.state_dict(), filename)
-    del model  # 删除模型对象
-    gc.collect()  # 调用垃圾回收
-    # print(f"Model saved to {filename}")
+    del model  
+    gc.collect()  
 
 
 def load_model(model, model_path):
-    # 加载保存的 state_dict
-    # model.load_state_dict(torch.load(model_path))
     model.load_state_dict(torch.load(model_path, weights_only=True), strict=False)
-    # model.eval()  # 切换到评估模式
     return model
 
 def create_folder(folder_name):
@@ -90,23 +85,6 @@ def create_folder(folder_name):
     except FileExistsError:
         print(f"f folder {folder_name} exist")
         
-class FilteredMNIST(datasets.MNIST):
-    def __init__(self, *args, labels=(0, 1), **kwargs):
-        # 调用父类的初始化方法
-        super().__init__(*args, **kwargs)
-        
-        # 筛选出指定标签的样本
-        self.indices = [i for i in range(len(self)) if self.targets[i].item() in labels]
-        self.data = self.data[self.indices]
-        self.targets = self.targets[self.indices]
-    
-    def __getitem__(self, index):
-        # 返回筛选后的样本
-        return self.data[index], self.targets[index]
-
-    def __len__(self):
-        # 返回筛选后的样本数量
-        return len(self.data)
 
 def distance_prototype(pre_prototype,current_prototype):
     euclidean_distance ={}
@@ -127,9 +105,7 @@ def old_prototype_current_compute(global_prototype, keys_in_global_not_in_curren
     old_prototype_current = {}
     for key in keys_in_global_not_in_current:
         if key in global_prototype:
-            # 计算新的值：global_prototype[key] + A * euclidean_distance[key]
             new_value = global_prototype[key] + args.r * euclidean_distance
-            # 将键和值添加到 old_prototype_current 中
             old_prototype_current[key] = new_value
     return old_prototype_current
 
@@ -137,9 +113,7 @@ def all_prototype_current_compute(global_prototype, union_prototype, euclidean_d
     old_prototype_current = {}
     for key in union_prototype:
         if key in global_prototype:
-            # 计算新的值：global_prototype[key] + A * euclidean_distance[key]
             new_value = global_prototype[key] + args.r * euclidean_distance
-            # 将键和值添加到 old_prototype_current 中
             old_prototype_current[key] = new_value
         else:
             old_prototype_current[key] = union_prototype[key]
@@ -280,42 +254,28 @@ def proto_aug_compute(global_prototype,t,number_data):
     proto_aug_label = []
     
     
-    # 从字典中获取非空原型的键
     index = [k for k, v in global_prototype.items() if torch.sum(v) != 0]
-    for key in index:  # 遍历 index 中的所有元素
+    for key in index: 
         for _ in range(number_data):
             original_proto = global_prototype[key]
-            # 添加噪声以生成增强原型
             noise = torch.tensor(np.random.normal(0, 1, original_proto.size()) * args.radius).float()
             noise = noise.to(device)
             
-            # 生成增强后的原型
             augmented_proto = original_proto + noise
             proto_aug.append(augmented_proto)
-            
-            # 添加对应的标签
-            proto_aug_label.append(list(global_prototype.keys()).index(key))
-        # print("augmented_proto",augmented_proto)
-        # print("augmented_label",list(global_prototype.keys()).index(key))
 
-    # 将增强的原型和标签转换为张量
+            proto_aug_label.append(list(global_prototype.keys()).index(key))
+
     proto_aug = torch.stack(proto_aug).to(torch.float32)
     proto_aug_label = torch.tensor(proto_aug_label).long()
     return proto_aug, proto_aug_label
 
 
 def temperature_squared_mse_loss(outputs_student, outputs_teacher, temperature=1.0):
-    """
-    计算使用温度参数调整后的学生和教师模型输出之间的均方误差损失。
-    outputs_student: 学生模型的原始输出 logits。
-    outputs_teacher: 教师模型的原始输出 logits。
-    temperature: 用于软化 softmax 的温度参数。
-    """
-    # 使用温度调整 softmax
+
     soft_logits_student = F.softmax(outputs_student / temperature, dim=1)
     soft_logits_teacher = F.softmax(outputs_teacher / temperature, dim=1)
-    
-    # 计算两者的 MSE
+
     loss = F.mse_loss(soft_logits_student, soft_logits_teacher)
     return loss
 
@@ -328,20 +288,13 @@ def prototype_compute(all_inter,label):
     unique_labels = torch.unique(label)
     prototypes = {}
     for label_val in unique_labels:
-        # 获取属于当前标签的样本索引
         idx = (label == label_val)
-        
-        # 取出所有属于该类别的样本
         samples_in_class = all_inter[idx]
-        
-        # 计算该类别的原型（均值）
         prototypes[label_val.item()] = samples_in_class.mean(dim=0)
-    # print("prototype[0]",prototypes[0])
     return prototypes
 
 def Class_train(args, logger):
     data = Data(args)
-    # folder_name1 = args.folder_name
     num_clients = args.num_user
     
     train_dataset, test_dataset = data.load_dataset(args)
@@ -438,8 +391,6 @@ def Class_train(args, logger):
                 batch_acc = []
                 clients_local_train_datasets=[]
                 
-                embedding_list = []
-                label_list = []
                 for i in range(num_clients):
                     client_local_train_dataset = DataLoader(train_dataset_split[i], batch_size=args.batch_size,shuffle=False)
                     client_local_train_dataset = iter(client_local_train_dataset)
@@ -527,46 +478,11 @@ def Class_train(args, logger):
                         euclidean_distance = distance_prototype(pre_prototype,current_prototype)
                         keys_in_global_not_in_current = global_prototype.keys() - current_prototype.keys()
                         old_prototype_current = old_prototype_current_compute(global_prototype,keys_in_global_not_in_current,euclidean_distance)
-                        # old_prototype_current = old_prototype_current_compute_PAS(global_prototype,keys_in_global_not_in_current,r)
                         proto_aug, proto_aug_label = proto_aug_compute(old_prototype_current,t,number_data)
                         proto_aug = proto_aug.to(device)
                         proto_aug_label = proto_aug_label.to(device)
                         
-                    # if epoch == args.global_epoch - 1:
-                    #     if i == 0:
-                    #         all_inter_save = all_inter.cpu()
-                    #         label_save = label.cpu()
-                    #         embedding_list.append(all_inter_save)
-                    #         label_list.append(label_save)
-                    #         if t!= 0:
-                    #             proto_aug_save = proto_aug.cpu()
-                    #             proto_aug_label_save = proto_aug_label.cpu()
-                    #             embedding_list.append(proto_aug_save)
-                    #             label_list.append(proto_aug_label_save)
-                    #     else:
-                    #         if len(embedding_list) == 0:
-                    #             print("embedding_all_list is empty",i)
-                    #         embedding_all_list = torch.cat(embedding_list, dim=0) 
-                    #         label_all_list = torch.cat(label_list, dim=0)
-                    #         unique_labels = np.unique(label_all_list)
-                    #         for l in unique_labels:
-                    #             indices = np.where(label_all_list == l)[0]
-                    #             if len(indices) < 4000:
-                    #                 all_inter_save = all_inter.cpu()
-                    #                 label_save = label.cpu()
-                    #                 embedding_list.append(all_inter_save)
-                    #                 label_list.append(label_save)
-                    #                 if t!=0:
-                    #                     proto_aug_save = proto_aug.cpu()
-                    #                     proto_aug_label_save = proto_aug_label.cpu()
-                    #                     embedding_list.append(proto_aug_save)
-                    #                     label_list.append(proto_aug_label_save)
-                    #             print("len(indices)",len(indices))
-                    #             break
-                    #         for l in unique_labels:
-                    #             print(unique_labels)
-                    #             indices = np.where(label_all_list == l)[0]
-                    #             print("each_len(indices)",len(indices))
+                    
         
                         
                     out_result = server_model(all_inter)
@@ -706,11 +622,6 @@ def Class_train(args, logger):
             for j in range(num_clients):
                 save_model(models[j],t,j)
                 print("save_model success",len(models))
-            # if len(models) == num_clients:
-            #     for j in range(num_clients):
-            #         del models[j]  # 释放模型的内存
-            # for j in range(num_clients):
-            #     del models[j]  # 释放模型的内存
             save_model(server_model,t,"active")
             
         
@@ -771,11 +682,9 @@ def test_model(server_model, num_clients, models, test_dataset, args, t, logger,
                 for j in range(num_clients):
                     img = next(clients_local_test_datasets[j])
                     img = img.to(device)
-                    # inter = models[j](img)
                     inter = models[j](img)
                     a_copy.append(inter.clone().detach().requires_grad_())
                 
-                #替换测试数据为原型
                 all_inter = all_inter_aggerate(a_copy,args)
                 out_result = server_model(all_inter)
                 loss = criterion(out_result, test_label.long())
@@ -783,13 +692,11 @@ def test_model(server_model, num_clients, models, test_dataset, args, t, logger,
                 correct = (predicted_a == test_label).sum().item()
                 total = test_label.size(0)
                 
-                # logger.info('Test_Task:{:d},Test:[{:d}], loss: {:.3f}, accure : {:.3f}'.format(t_test, i, loss.item(), 100 * correct /total))
                 test_loss.append(loss.item())
                 init_acc = correct / total
                 test_acc.append(100 * correct /total)
             avg_test_loss = sum(test_loss) / len(test_loss)
             avg_test_acc = sum(test_acc) / len(test_acc)
-            # logger.info(f'[Testing Epoch: {ep+1}], loss: {avg_test_loss}, accuracy: {avg_test_acc}')
             test_task_acc.append(avg_test_acc)
             test_task_loss.append(avg_test_loss)
     return test_task_acc, test_task_loss
@@ -807,9 +714,7 @@ if __name__ == '__main__':
     args = args_parser()
     logger = setup_logger(args)
     logger.info(device)
-    logger.info("命令行参数:")
     for arg, value in vars(args).items():
         logger.info(f"{arg}: {value}")
-    # PraVFed_train(args,logger)
     Class_train(args,logger)
     

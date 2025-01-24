@@ -1,11 +1,4 @@
-'''
-Author: wangshuo105 3220215214@bit.edu.cn
-Date: 2023-10-13 20:05:55
-LastEditors: wangshuo105 3220215214@bit.edu.cn
-LastEditTime: 2024-03-02 14:22:53
-FilePath: /Heterogeneous_vertical_federated_learning/lib/options.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-'''
+
 import argparse
 
 def args_parser():
@@ -32,12 +25,8 @@ def args_parser():
     
     parser.add_argument("--k_0", type=float, default=15,help="create noise")
     parser.add_argument("--alpha", type=float, default=3,help="create noise")
-    # parser.add_argument("--folder_name", type=str, default="",help="create noise")
-    
-    # parser.add_argument("--exper_number",type=str,default="E1", help="experiment number")
-    # parser.add_argument("--each_batch_shapley", type=int, default=0, help="whether compute the contribution by each batch size")
+  
     parser.add_argument("--weight_type", type=str, default="global_weight",help="wheter using normalization")
-    # 第三个实验，采用贡献值聚合的方法(global_weight,current_weight,no_normalize)
     parser.add_argument("--history_rate",type=float,default=0.3,help="history contribution rate")
     parser.add_argument('--model', type=str, default='lenet', help="model name")
     parser.add_argument('--mode', type=str, default='task_heter', help="mode")
@@ -47,12 +36,9 @@ def args_parser():
     parser.add_argument('--ep', type=str, default=1,help="ep number")
     # data
     parser.add_argument('--datasets',type=str, default='Fmnist', help="dataset type")
-    #parser.add_argument('--train', type=str, default='True', help="the dataset is or not training")
-    # parser.add_argument('--split', type=int, default=392, help="split imgs feature")
     parser.add_argument('--batch_size', type=int, default=128, help="local batch_size")
     parser.add_argument('--shuffle', type=str, default='True',help="whether shuffle the dataset")
     parser.add_argument('--nThreads',type=int, default=10, help="number of threads when read data")
-    # other
     parser.add_argument('--data_dir', type=str, default='../data/', help="directory of dataset")
     parser.add_argument('--dataset', type=str, default='cifar', help="name of dataset")
     parser.add_argument('--num_classes', type=int, default=10, help="name of classes")
