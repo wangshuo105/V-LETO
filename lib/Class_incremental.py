@@ -64,7 +64,6 @@ def transpose_2d(data):
 
 
 def save_model(model, t, party):
-    # 确保保存目录存在
     save_dir = f"save_model_class/{t}/{args.datasets}"
     os.makedirs(save_dir, exist_ok=True)
     filename = os.path.join(save_dir, f"{party}_model_{args.model}_{args.datasets}_{args.lambda_proto_aug}_{args.k_0}_{args.alpha}_{args.lr}_task_{t}.pth")
