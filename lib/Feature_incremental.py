@@ -6,10 +6,7 @@ from lib.options import args_parser
 from random import choice
 from lib.models.models import *
 from lib.models.models_cifar import *
-# from lib.models.resnet_cifar import *
 from lib.models.resnet_mnist import *
-# from fed.active_party_cifar import active_party_cifar
-# from fed.passive_cifar import passive_party_cifar
 import openpyxl
 from torch.utils.data import DataLoader
 import pandas as pd
@@ -20,7 +17,6 @@ import random
 import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import Subset, ConcatDataset
-# from lib.prototype import *
 from lib.Tool import *
 
 
@@ -84,25 +80,7 @@ def all_prototype_current_compute(global_prototype, union_prototype, euclidean_d
             old_prototype_current[key] = union_prototype[key]
     return old_prototype_current
 
-def server_model_create():
-    resnet18_top = resnet18()[1]
-    resnet50_top = resnet50()[1]
-    resnet101_top = resnet101()[1]
-    if args.model =="mlp": 
-        server_model = mlp_top()
-    elif args.model == "cnn":
-        server_model = cnn_top()
-    elif args.model == "lenet":
-        server_model = lenet_top()
-    elif args.model == "resnet18":
-        server_model = resnet18_top
-    elif args.model == "resnet50":
-        server_model = resnet50_top
-    elif args.model == "resnet101":
-        server_model = resnet101_top
-    else:
-        print("the model not existing")
-    return server_model
+
 
 
 def all_inter_aggerate(a):
@@ -123,37 +101,7 @@ def select_important_parameters(fisher_information, threshold=0.01):
     return important_params
 
 
-def single_bottom_create(num_clients):
-    resnet18_bottom = resnet18()
-    resnet50_bottom = resnet50()
-    resnet101_bottom = resnet101()
-    if args.model =="mlp":
-        if args.datasets == "cifar10":
-            dim_in = int(32/num_clients)
-            model = mlp_cifar_bottom(dim_in)
-        else:
-            dim_in = int(28/num_clients)
-            model = mlp_bottom(dim_in)
-    elif args.model == "cnn":
-        if args.datasets == "cifar10":
-            model = cnn_cifar_bottom()
-        else:
-            model = cnn_bottom()
-    elif args.model == "lenet":
-        if args.datasets == "cifar10":
-            model = lenet_cifar_bottom()
-        else:
-            model = lenet_bottom()
-    elif args.model == "resnet18":
-        model = resnet18_bottom
-    elif args.model == "resnet50":
-        model = resnet50_bottom
-    elif args.model == "resnet101":
-        model = resnet101_bottom
-    else:
-        print("the model not existing")
-    model.to(device)
-    return model
+
 
 
 criterion = nn.CrossEntropyLoss()
@@ -169,66 +117,7 @@ def obtain_target_distribution(device, label_num, embedding_dim):
     for label in range(label_num):
         target_distributions[label] = torch.normal(mean=label, std=1, size=(embedding_dim,)).to(device)
     return target_distributions
-def bottom_model_create(num_clients):
-    models = []
-    optimizers = []
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    resnet18_bottom = resnet18()[0]
-    resnet50_bottom = resnet50()[0]
-    resnet101_bottom = resnet101()[0]
-    three_image =["cifar10","cifar100","cinic10"]
-    if args.train_type == "heter":
-        if args.model == "mlp" or args.model == 'cnn' or args.model == 'lenet':
-            if args.datasets in three_image:
-                model_list = [mlp_cifar_bottom(),lenet_cifar_bottom(),cnn_cifar_bottom()]
-            else:
-                dim_in = int(28/num_clients)
-                print("dim_in::",dim_in)
-                model_list = [mlp_bottom(dim_in),lenet_bottom(),cnn_bottom()]
-        else:
-            model_list = [resnet18_bottom,resnet50_bottom,resnet101_bottom] 
-    
-    for i in range(num_clients):
-        if args.train_type == "heter":
-            model = model_list[i%3]
-        else:
-            if args.model =="mlp":
-                if args.datasets in three_image:
-                    dim_in = int(32/num_clients)
-                    model = mlp_cifar_bottom(dim_in)
-                else:
-                    dim_in = int(28/num_clients)
-                    model = mlp_bottom(dim_in)
-            elif args.model == "cnn":
-                if args.datasets in three_image:
-                    model = cnn_cifar_bottom()
-                else:
-                    model = cnn_bottom()
-            elif args.model == "lenet":
-                if args.datasets in three_image:
-                    model = lenet_cifar_bottom()
-                else:
-                    model = lenet_bottom()
-            elif args.model == "resnet18":
-                model = resnet18_bottom
-            elif args.model == "resnet50":
-                model = resnet50_bottom
-            elif args.model == "resnet101":
-                model = resnet101_bottom
-            else:
-                print("the model not existing")
-        model.to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
 
-        for param in model.parameters():
-            if param.is_cuda:
-                print("Model is on GPU")
-                break
-            else:
-                print("Model is on CPU")
-        models.append(model)
-        optimizers.append(optimizer)
-    return models,optimizers
 
 def prototype_compute(all_inter,label):
     unique_labels = torch.unique(label)
