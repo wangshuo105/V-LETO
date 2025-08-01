@@ -3,12 +3,8 @@ import torch
 from lib.data_example import *
 from lib.options import args_parser
 from random import choice
-# from lib.models.models import *
 from lib.models.models_cifar import *
-# from lib.models.resnet_cifar import *
 from lib.models.resnet_mnist import *
-# from fed.active_party_cifar import active_party_cifar
-# from fed.passive_cifar import passive_party_cifar
 import openpyxl
 from torch.utils.data import DataLoader
 import pandas as pd
@@ -28,7 +24,6 @@ from datetime import datetime
 import torch.nn.functional as F
 from sklearn.preprocessing import StandardScaler
 
-# from openTSNE import TSNE
 import torch.nn as nn
 import logging
 from sklearn.utils import resample
