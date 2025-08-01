@@ -43,6 +43,49 @@ def mlp_bottom(pretrained=False, **kwargs):
     model = MLP_bottom(**kwargs)
     return model
 
+class MLP5(nn.Module):
+    def __init__(self, input_dim, output_dim, hidden_dim=128):
+        super(MLP5, self).__init__()
+        self.layer = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim//2),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(hidden_dim//2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(hidden_dim, output_dim)
+        )
+
+    def forward(self, x):
+        out = self.layer(x)
+        return out
+
+def MLP5_bottom(input_dim, output_dim, hidden_dim=128):
+    model = MLP5(input_dim, output_dim, hidden_dim)
+    return model
+
+
+
+class MLP5_top(nn.Module):
+
+    def __init__(self, hidden_dim, num_classes):
+        super().__init__()
+        self.fc1_top = nn.Linear(hidden_dim, hidden_dim//2)
+        self.fc2_top = nn.Linear(hidden_dim//2, num_classes)
+
+    def forward(self, z_list):
+
+        x = self.fc1_top(z_list)
+        x = F.relu(x)
+        x = self.fc2_top(x)
+        x = F.relu(x)
+        x = x.squeeze(1)
+        return x
+
+def mlp5_top(hidden_dim, num_classes):
+    model = MLP5_top(hidden_dim, num_classes)
+    return model
+
 
 class CNN_bottom(nn.Module):
     def __init__(self):
