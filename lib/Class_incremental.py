@@ -118,25 +118,6 @@ def all_prototype_current_compute(global_prototype, union_prototype, euclidean_d
             old_prototype_current[key] = union_prototype[key]
     return old_prototype_current
 
-def server_model_create(args):
-    resnet18_top = resnet18()[1]
-    resnet50_top = resnet50()[1]
-    resnet101_top = resnet101()[1]
-    if args.model =="mlp": 
-        server_model = mlp_top()
-    elif args.model == "cnn":
-        server_model = cnn_top()
-    elif args.model == "lenet":
-        server_model = lenet_top()
-    elif args.model == "resnet18":
-        server_model = resnet18_top
-    elif args.model == "resnet50":
-        server_model = resnet50_top
-    elif args.model == "resnet101":
-        server_model = resnet101_top
-    else:
-        print("the model not existing")
-    return server_model
 
 def all_inter_aggerate(a,args):
     if args.baseline_type=="max":
@@ -151,101 +132,10 @@ def all_inter_aggerate(a,args):
 def select_important_parameters(fisher_information, threshold=0.01):
     important_params = {}
     for name, fisher_value in fisher_information.items():
-        # 选择费舍尔信息值大于阈值的参数
         important_params[name] = (fisher_value > threshold).float()
     return important_params
 
-def single_bottom_create(num_clients):
-    resnet18_bottom = resnet18()
-    resnet50_bottom = resnet50()
-    resnet101_bottom = resnet101()
-    if args.model =="mlp":
-        if args.datasets == "cifar10":
-            dim_in = int(32/num_clients)
-            model = mlp_cifar_bottom(dim_in)
-        else:
-            dim_in = int(28/num_clients)
-            model = mlp_bottom(dim_in)
-    elif args.model == "cnn":
-        if args.datasets == "cifar10":
-            model = cnn_cifar_bottom()
-        else:
-            model = cnn_bottom()
-    elif args.model == "lenet":
-        if args.datasets == "cifar10":
-            model = lenet_cifar_bottom()
-        else:
-            model = lenet_bottom()
-    elif args.model == "resnet18":
-        model = resnet18_bottom
-    elif args.model == "resnet50":
-        model = resnet50_bottom
-    elif args.model == "resnet101":
-        model = resnet101_bottom
-    else:
-        print("the model not existing")
-    model.to(device)
-    return model
 
-def bottom_model_create(num_clients,args):
-    models = []
-    optimizers = []
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    resnet18_bottom = resnet18()[0]
-    resnet50_bottom = resnet50()[0]
-    resnet101_bottom = resnet101()[0]
-    three_image =["cifar10","cifar100","cinic10"]
-    if args.train_type == "heter":
-        if args.model == "mlp" or args.model == 'cnn' or args.model == 'lenet':
-            if args.datasets in three_image:
-                model_list = [mlp_cifar_bottom(),lenet_cifar_bottom(),cnn_cifar_bottom()]
-            else:
-                dim_in = int(28/num_clients)
-                print("dim_in::",dim_in)
-                model_list = [mlp_bottom(dim_in),lenet_bottom(),cnn_bottom()]
-        else:
-            model_list = [resnet18_bottom,resnet50_bottom,resnet101_bottom] 
-    
-    for i in range(num_clients):
-        if args.train_type == "heter":
-            model = model_list[i%3]
-        else:
-            if args.model =="mlp":
-                if args.datasets in three_image:
-                    dim_in = int(32/num_clients)
-                    model = mlp_cifar_bottom(dim_in)
-                else:
-                    dim_in = int(28/num_clients)
-                    model = mlp_bottom(dim_in)
-            elif args.model == "cnn":
-                if args.datasets in three_image:
-                    model = cnn_cifar_bottom()
-                else:
-                    model = cnn_bottom()
-            elif args.model == "lenet":
-                if args.datasets in three_image:
-                    model = lenet_cifar_bottom()
-                else:
-                    model = lenet_bottom()
-            elif args.model == "resnet18":
-                model = resnet18_bottom
-            elif args.model == "resnet50":
-                model = resnet50_bottom
-            elif args.model == "resnet101":
-                model = resnet101_bottom
-            else:
-                print("the model not existing")
-        model.to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
-        for param in model.parameters():
-            if param.is_cuda:
-                print("Model is on GPU")
-                break
-            else:
-                print("Model is on CPU")
-        models.append(model)
-        optimizers.append(optimizer)
-    return models,optimizers
 
 
 def proto_aug_compute(global_prototype,t,number_data):
@@ -306,7 +196,7 @@ def Class_train(args, logger):
     train_dataset_list = []
     if args.class_type == 'class_task':
         for i in range(args.task):
-            filtered_train = filter_by_class(train_dataset, [i*2,i*2+1,i*2+2,i*2+3])
+            filtered_train = filter_by_class(train_dataset, [i*2,i*2+1])
             train_indices = list(filtered_train.indices)
             random.shuffle(train_indices)
             filtered_train = Subset(filtered_train.dataset, train_indices)
@@ -319,7 +209,7 @@ def Class_train(args, logger):
     if args.class_type == 'class_task':
         for j in range(args.task):
             logger.info(f'test_aaa:{j}')
-            filtered_test = filter_by_class(test_dataset, [j*2,j*2+1,j*2+2,j*2+3])
+            filtered_test = filter_by_class(test_dataset, [j*2,j*2+1])
             test_indices = list(filtered_test.indices)
             random.shuffle(test_indices)
             filtered_test = Subset(filtered_test.dataset, test_indices)
@@ -645,7 +535,7 @@ def test_model(server_model, num_clients, models, test_dataset, args, t, logger,
     current_labels = []
     for j in range(t+1):
         print("test_aaa", j)
-        current_label = [j*2,j*2+1,j*2+2,j*2+3]
+        current_label = [j*2,j*2+1]
         print("current_label", current_label)
         current_labels = list(set(current_labels) | set(current_label))
         filtered_test = filter_by_class(test_dataset, current_label)
