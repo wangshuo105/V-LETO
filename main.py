@@ -5,7 +5,6 @@ from lib.options import args_parser
 from random import choice
 from lib.models.models import *
 from lib.models.models_cifar import *
-# from lib.models.resnet_cifar import *
 from lib.models.resnet_mnist import *
 import openpyxl
 from torch.utils.data import DataLoader
